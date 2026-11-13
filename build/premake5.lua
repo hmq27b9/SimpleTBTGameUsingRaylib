@@ -1,3 +1,4 @@
+--build/premake5.lua
 workspace "SimpleTBTGameUsingRaylib"
     architecture "x86_64"
     configurations { "Debug", "Release" }

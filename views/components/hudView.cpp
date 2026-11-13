@@ -1,3 +1,4 @@
+//views/components/hudView.cpp
 #include "views/components/hudView.hpp"
 
 void hudView::draw(const Game& g, const generalController& ctrl) const {

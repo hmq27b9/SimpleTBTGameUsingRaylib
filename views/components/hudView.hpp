@@ -1,3 +1,4 @@
+//views/components/hudView.hpp
 #pragma once
 #include "models/Game.hpp"
 #include "controllers/generalController.hpp"

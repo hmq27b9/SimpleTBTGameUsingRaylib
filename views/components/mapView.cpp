@@ -1,3 +1,4 @@
+//views/components/mapView.cpp
 #include "views/components/mapView.hpp"
 
 Color mapView::terrainColor(Terrain t) const {

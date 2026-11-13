@@ -1,3 +1,4 @@
+//main.cpp
 #include "raylib.h"
 #include "routes/generalRoute.hpp"
 #include "views/mapPrologue/mapPrologue.hpp"
