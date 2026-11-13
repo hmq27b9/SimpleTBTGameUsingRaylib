@@ -11,6 +11,6 @@ struct OwnInfantry {
     int attackPower = 3;
     bool hasMoved = false;
     bool hasActed = false;
-    bool isPlayerTeam = true;
+
     bool isAlive() const { return hp > 0; }
 };

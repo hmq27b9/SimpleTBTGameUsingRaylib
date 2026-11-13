@@ -117,7 +117,7 @@
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/13/bits/charconv.h \
- /usr/include/c++/13/bits/basic_string.tcc \
+ /usr/include/c++/13/bits/basic_string.tcc ../models/EnemyInfantry.hpp \
  ../controllers/generalController.hpp
 /usr/include/stdc-predef.h:
 ../models/Game.hpp:
@@ -265,4 +265,5 @@
 /usr/include/x86_64-linux-gnu/bits/types/error_t.h:
 /usr/include/c++/13/bits/charconv.h:
 /usr/include/c++/13/bits/basic_string.tcc:
+../models/EnemyInfantry.hpp:
 ../controllers/generalController.hpp:

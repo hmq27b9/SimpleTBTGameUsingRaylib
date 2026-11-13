@@ -1,5 +1,5 @@
 #include "models/Game.hpp"
-#include "controllers/generalController.hpp"   // for MapData definition
+#include "controllers/generalController.hpp"   // MapData
 
 Game::Game(const MapData& d)
     : map_(d.width, d.height), mapId_(d.id), mapName_(d.displayName)
@@ -15,37 +15,48 @@ Game::Game(const MapData& d)
     }
     int id = 1;
     for (const auto& s : d.units) {
-        OwnInfantry u;
-        u.id = id++; u.name = s.name;
-        u.gridX = s.x; u.gridY = s.y;
-        u.isPlayerTeam = s.player;
-        u.hp = u.maxHp = s.hp;
-        u.attackPower = s.atk;
-        u.moveRange = s.moveRange;
-        u.attackRange = s.attackRange;
-        infantry_.push_back(u);
+        if (s.player) {
+            OwnInfantry u;
+            u.id = id++; u.name = s.name;
+            u.gridX = s.x; u.gridY = s.y;
+            u.hp = u.maxHp = s.hp;
+            u.attackPower = s.atk;
+            u.moveRange = s.moveRange;
+            u.attackRange = s.attackRange;
+            ownInfantry_.push_back(u);
+        } else {
+            EnemyInfantry e;
+            e.id = id++; e.name = s.name;
+            e.gridX = s.x; e.gridY = s.y;
+            e.hp = e.maxHp = s.hp;
+            e.attackPower = s.atk;
+            e.moveRange = s.moveRange;
+            e.attackRange = s.attackRange;
+            enemyInfantry_.push_back(e);
+        }
     }
 }
 
-OwnInfantry* Game::infantryAt(int x, int y) {
-    for (auto& u : infantry_)
-        if (u.isAlive() && u.gridX == x && u.gridY == y) return &u;
+OwnInfantry* Game::ownById(int id) {
+    for (auto& u : ownInfantry_) if (u.id == id) return &u;
     return nullptr;
 }
-const OwnInfantry* Game::infantryAt(int x, int y) const {
-    for (auto& u : infantry_)
-        if (u.isAlive() && u.gridX == x && u.gridY == y) return &u;
+EnemyInfantry* Game::enemyById(int id) {
+    for (auto& e : enemyInfantry_) if (e.id == id) return &e;
     return nullptr;
 }
-OwnInfantry* Game::infantryById(int id) {
-    for (auto& u : infantry_) if (u.id == id) return &u;
-    return nullptr;
+
+bool Game::tileOccupied(int x, int y) const {
+    for (const auto& u : ownInfantry_)
+        if (u.isAlive() && u.gridX == x && u.gridY == y) return true;
+    for (const auto& e : enemyInfantry_)
+        if (e.isAlive() && e.gridX == x && e.gridY == y) return true;
+    return false;
 }
+
 bool Game::isGameOver() const {
     bool p = false, e = false;
-    for (auto& u : infantry_) {
-        if (!u.isAlive()) continue;
-        if (u.isPlayerTeam) p = true; else e = true;
-    }
+    for (const auto& u : ownInfantry_)   if (u.isAlive()) { p = true; break; }
+    for (const auto& e2 : enemyInfantry_) if (e2.isAlive()) { e = true; break; }
     return !p || !e;
 }
