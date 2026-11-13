@@ -1,17 +1,17 @@
 #include "raylib.h"
-#include "router/Router.hpp"
-#include "view/prologue/PrologueView.hpp"
+#include "routes/generalRoute.hpp"
+#include "views/mapPrologue/mapPrologue.hpp"
 
 int main() {
     InitWindow(1024, 720, "SimpleTBTGameUsingRaylib");
     SetTargetFPS(60);
 
-    MapData firstMission = PrologueView::makeMapData();
-    Router router(firstMission);
+    MapData firstMission = mapPrologue::makeMapData();
+    generalRoute route(firstMission);
 
     while (!WindowShouldClose()) {
-        router.update();
-        router.draw();
+        route.update();
+        route.draw();
     }
     CloseWindow();
     return 0;
