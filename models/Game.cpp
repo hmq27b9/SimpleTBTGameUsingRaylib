@@ -17,7 +17,7 @@ Game::Game(const MapData& d)
     int id = 1;
     for (const auto& s : d.units) {
         if (s.player) {
-            OwnInfantry u;
+            UnitOwnInfantryLine u;
             u.id = id++; u.name = s.name;
             u.gridX = s.x; u.gridY = s.y;
             u.hp = u.maxHp = s.hp;
@@ -26,7 +26,7 @@ Game::Game(const MapData& d)
             u.attackRange = s.attackRange;
             ownInfantry_.push_back(u);
         } else {
-            EnemyInfantry e;
+            UnitEnemyInfantryLine e;
             e.id = id++; e.name = s.name;
             e.gridX = s.x; e.gridY = s.y;
             e.hp = e.maxHp = s.hp;
@@ -38,11 +38,11 @@ Game::Game(const MapData& d)
     }
 }
 
-OwnInfantry* Game::ownById(int id) {
+UnitOwnInfantryLine* Game::ownById(int id) {
     for (auto& u : ownInfantry_) if (u.id == id) return &u;
     return nullptr;
 }
-EnemyInfantry* Game::enemyById(int id) {
+UnitEnemyInfantryLine* Game::enemyById(int id) {
     for (auto& e : enemyInfantry_) if (e.id == id) return &e;
     return nullptr;
 }

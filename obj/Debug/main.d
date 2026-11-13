@@ -122,8 +122,9 @@
  /usr/include/c++/13/bits/range_access.h \
  /usr/include/c++/13/bits/vector.tcc \
  /usr/include/c++/13/bits/memory_resource.h /usr/include/c++/13/cstddef \
- /usr/include/c++/13/bits/uses_allocator_args.h ../models/OwnInfantry.hpp \
- /usr/include/c++/13/string /usr/include/c++/13/bits/char_traits.h \
+ /usr/include/c++/13/bits/uses_allocator_args.h \
+ ../models/UnitOwnInfantryLine.hpp /usr/include/c++/13/string \
+ /usr/include/c++/13/bits/char_traits.h \
  /usr/include/c++/13/bits/localefwd.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/c++locale.h \
  /usr/include/c++/13/clocale /usr/include/locale.h \
@@ -154,10 +155,10 @@
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/13/bits/charconv.h \
- /usr/include/c++/13/bits/basic_string.tcc ../models/EnemyInfantry.hpp \
- ../controllers/generalController.hpp ../views/components/mapView.hpp \
- ../views/components/unitView.hpp ../views/components/hudView.hpp \
- ../views/mapPrologue/mapPrologue.hpp
+ /usr/include/c++/13/bits/basic_string.tcc \
+ ../models/UnitEnemyInfantryLine.hpp ../controllers/generalController.hpp \
+ ../views/components/mapView.hpp ../views/components/unitView.hpp \
+ ../views/components/hudView.hpp ../views/mapPrologue/mapPrologue.hpp
 /usr/include/stdc-predef.h:
 /usr/local/include/raylib.h:
 /usr/lib/gcc/x86_64-linux-gnu/13/include/stdarg.h:
@@ -302,7 +303,7 @@
 /usr/include/c++/13/bits/memory_resource.h:
 /usr/include/c++/13/cstddef:
 /usr/include/c++/13/bits/uses_allocator_args.h:
-../models/OwnInfantry.hpp:
+../models/UnitOwnInfantryLine.hpp:
 /usr/include/c++/13/string:
 /usr/include/c++/13/bits/char_traits.h:
 /usr/include/c++/13/bits/localefwd.h:
@@ -349,7 +350,7 @@
 /usr/include/x86_64-linux-gnu/bits/types/error_t.h:
 /usr/include/c++/13/bits/charconv.h:
 /usr/include/c++/13/bits/basic_string.tcc:
-../models/EnemyInfantry.hpp:
+../models/UnitEnemyInfantryLine.hpp:
 ../controllers/generalController.hpp:
 ../views/components/mapView.hpp:
 ../views/components/unitView.hpp:

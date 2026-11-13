@@ -34,7 +34,7 @@ private:
     bool inMoveRange(int gridX, int gridY, int moveRange,
                      int tx, int ty) const;
     void runEnemyTurn();
-    bool tryEnemyStep(EnemyInfantry& e);
+    bool tryEnemyStep(UnitEnemyInfantryLine& e);
 
     Game& game_;
     Phase phase_      = Phase::PlayerTurn;

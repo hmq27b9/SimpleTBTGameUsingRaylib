@@ -1,8 +1,8 @@
-//models/OwnInfantry.hpp
+//models/UnitOwnInfantryLine.hpp
 #pragma once
 #include <string>
 
-struct OwnInfantry {
+struct UnitOwnInfantryLine {
     int id = 0;
     std::string name;
     int gridX = 0, gridY = 0;

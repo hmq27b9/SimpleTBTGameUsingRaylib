@@ -12,7 +12,7 @@ void hudView::draw(const Game& g, const generalController& ctrl) const {
     DrawText("[SPACE] End Turn", 820, 110, 16, LIGHTGRAY);
 
     if (g.selectedUnitId != -1) {
-        if (const OwnInfantry* u = const_cast<Game&>(g).ownById(g.selectedUnitId)) {
+        if (const UnitOwnInfantryLine* u = const_cast<Game&>(g).ownById(g.selectedUnitId)) {
             DrawText(u->name.c_str(), 820, 160, 22, YELLOW);
             DrawText(TextFormat("HP %d/%d", u->hp, u->maxHp), 820, 188, 18, RAYWHITE);
             DrawText(TextFormat("ATK %d  RNG %d", u->attackPower, u->attackRange),

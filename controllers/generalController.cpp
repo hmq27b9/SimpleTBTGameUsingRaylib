@@ -30,7 +30,7 @@ void generalController::handleTileClick(int gx, int gy) {
         return;
     }
 
-    OwnInfantry* sel = game_.ownById(game_.selectedUnitId);
+    UnitOwnInfantryLine* sel = game_.ownById(game_.selectedUnitId);
     if (!sel) { game_.selectedUnitId = -1; return; }
 
     // 2) Clicked an enemy → attack
@@ -52,7 +52,7 @@ void generalController::handleTileClick(int gx, int gy) {
 }
 
 void generalController::tryMove(int gx, int gy) {
-    OwnInfantry* sel = game_.ownById(game_.selectedUnitId);
+    UnitOwnInfantryLine* sel = game_.ownById(game_.selectedUnitId);
     if (!sel || sel->hasMoved) return;
     if (!inMoveRange(sel->gridX, sel->gridY, sel->moveRange, gx, gy)) return;
     sel->gridX = gx; sel->gridY = gy;
@@ -60,9 +60,9 @@ void generalController::tryMove(int gx, int gy) {
 }
 
 void generalController::tryAttack(int gx, int gy) {
-    OwnInfantry* sel = game_.ownById(game_.selectedUnitId);
+    UnitOwnInfantryLine* sel = game_.ownById(game_.selectedUnitId);
     if (!sel) return;
-    EnemyInfantry* target = nullptr;
+    UnitEnemyInfantryLine* target = nullptr;
     for (auto& e : game_.enemyInfantry())
         if (e.isAlive() && e.gridX == gx && e.gridY == gy) { target = &e; break; }
     if (!target) return;
@@ -74,9 +74,9 @@ void generalController::tryAttack(int gx, int gy) {
 
 // ---- Enemy turn -------------------------------------------------
 
-bool generalController::tryEnemyStep(EnemyInfantry& e) {
+bool generalController::tryEnemyStep(UnitEnemyInfantryLine& e) {
     // Nearest living player
-    const OwnInfantry* nearest = nullptr;
+    const UnitOwnInfantryLine* nearest = nullptr;
     int bestDist = 9999;
     for (const auto& p : game_.ownInfantry()) {
         if (!p.isAlive()) continue;

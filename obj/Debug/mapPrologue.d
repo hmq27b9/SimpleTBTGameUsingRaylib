@@ -52,7 +52,7 @@
  /usr/lib/gcc/x86_64-linux-gnu/13/include/stddef.h \
  /usr/include/c++/13/bits/uses_allocator.h \
  /usr/include/c++/13/bits/uses_allocator_args.h /usr/include/c++/13/tuple \
- ../models/OwnInfantry.hpp /usr/include/c++/13/string \
+ ../models/UnitOwnInfantryLine.hpp /usr/include/c++/13/string \
  /usr/include/c++/13/bits/stringfwd.h \
  /usr/include/c++/13/bits/char_traits.h \
  /usr/include/c++/13/bits/postypes.h /usr/include/c++/13/cwchar \
@@ -119,7 +119,8 @@
  /usr/include/asm-generic/errno.h /usr/include/asm-generic/errno-base.h \
  /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/13/bits/charconv.h \
- /usr/include/c++/13/bits/basic_string.tcc ../models/EnemyInfantry.hpp
+ /usr/include/c++/13/bits/basic_string.tcc \
+ ../models/UnitEnemyInfantryLine.hpp
 /usr/include/stdc-predef.h:
 ../views/mapPrologue/mapPrologue.hpp:
 ../controllers/generalController.hpp:
@@ -185,7 +186,7 @@
 /usr/include/c++/13/bits/uses_allocator.h:
 /usr/include/c++/13/bits/uses_allocator_args.h:
 /usr/include/c++/13/tuple:
-../models/OwnInfantry.hpp:
+../models/UnitOwnInfantryLine.hpp:
 /usr/include/c++/13/string:
 /usr/include/c++/13/bits/stringfwd.h:
 /usr/include/c++/13/bits/char_traits.h:
@@ -268,4 +269,4 @@
 /usr/include/x86_64-linux-gnu/bits/types/error_t.h:
 /usr/include/c++/13/bits/charconv.h:
 /usr/include/c++/13/bits/basic_string.tcc:
-../models/EnemyInfantry.hpp:
+../models/UnitEnemyInfantryLine.hpp:

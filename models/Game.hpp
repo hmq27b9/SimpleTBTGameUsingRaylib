@@ -1,8 +1,8 @@
 //models/Game.hpp
 #pragma once
 #include "models/Map.hpp"
-#include "models/OwnInfantry.hpp"
-#include "models/EnemyInfantry.hpp"
+#include "models/UnitOwnInfantryLine.hpp"
+#include "models/UnitEnemyInfantryLine.hpp"
 #include <vector>
 #include <string>
 
@@ -15,16 +15,16 @@ public:
     Map& map() { return map_; }
     const Map& map() const { return map_; }
 
-    std::vector<OwnInfantry>&   ownInfantry()   { return ownInfantry_; }
-    const std::vector<OwnInfantry>& ownInfantry() const { return ownInfantry_; }
+    std::vector<UnitOwnInfantryLine>&   ownInfantry()   { return ownInfantry_; }
+    const std::vector<UnitOwnInfantryLine>& ownInfantry() const { return ownInfantry_; }
 
-    std::vector<EnemyInfantry>& enemyInfantry() { return enemyInfantry_; }
-    const std::vector<EnemyInfantry>& enemyInfantry() const { return enemyInfantry_; }
+    std::vector<UnitEnemyInfantryLine>& enemyInfantry() { return enemyInfantry_; }
+    const std::vector<UnitEnemyInfantryLine>& enemyInfantry() const { return enemyInfantry_; }
 
     const std::string& mapName() const { return mapName_; }
 
-    OwnInfantry*   ownById(int id);
-    EnemyInfantry* enemyById(int id);
+    UnitOwnInfantryLine*   ownById(int id);
+    UnitEnemyInfantryLine* enemyById(int id);
 
     bool tileOccupied(int x, int y) const;
 
@@ -33,7 +33,7 @@ public:
 
 private:
     Map map_;
-    std::vector<OwnInfantry>   ownInfantry_;
-    std::vector<EnemyInfantry> enemyInfantry_;
+    std::vector<UnitOwnInfantryLine>   ownInfantry_;
+    std::vector<UnitEnemyInfantryLine> enemyInfantry_;
     std::string mapId_, mapName_;
 };
