@@ -120,7 +120,17 @@
  /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/15/bits/charconv.h \
  /usr/include/c++/15/bits/basic_string.tcc \
- ../models/UnitEnemyInfantryLine.hpp
+ ../models/UnitEnemyInfantryLine.hpp /usr/include/c++/15/utility \
+ /usr/include/c++/15/bits/stl_relops.h /usr/include/c++/15/queue \
+ /usr/include/c++/15/deque /usr/include/c++/15/bits/stl_deque.h \
+ /usr/include/c++/15/bits/deque.tcc /usr/include/c++/15/bits/stl_heap.h \
+ /usr/include/c++/15/bits/stl_queue.h /usr/include/c++/15/algorithm \
+ /usr/include/c++/15/bits/stl_algo.h \
+ /usr/include/c++/15/bits/algorithmfwd.h \
+ /usr/include/c++/15/bits/uniform_int_dist.h \
+ /usr/include/c++/15/bits/stl_tempbuf.h \
+ /usr/include/c++/15/pstl/glue_algorithm_defs.h \
+ /usr/include/c++/15/pstl/execution_defs.h
 /usr/include/stdc-predef.h:
 ../controllers/generalController.hpp:
 ../models/Game.hpp:
@@ -271,3 +281,18 @@
 /usr/include/c++/15/bits/charconv.h:
 /usr/include/c++/15/bits/basic_string.tcc:
 ../models/UnitEnemyInfantryLine.hpp:
+/usr/include/c++/15/utility:
+/usr/include/c++/15/bits/stl_relops.h:
+/usr/include/c++/15/queue:
+/usr/include/c++/15/deque:
+/usr/include/c++/15/bits/stl_deque.h:
+/usr/include/c++/15/bits/deque.tcc:
+/usr/include/c++/15/bits/stl_heap.h:
+/usr/include/c++/15/bits/stl_queue.h:
+/usr/include/c++/15/algorithm:
+/usr/include/c++/15/bits/stl_algo.h:
+/usr/include/c++/15/bits/algorithmfwd.h:
+/usr/include/c++/15/bits/uniform_int_dist.h:
+/usr/include/c++/15/bits/stl_tempbuf.h:
+/usr/include/c++/15/pstl/glue_algorithm_defs.h:
+/usr/include/c++/15/pstl/execution_defs.h:

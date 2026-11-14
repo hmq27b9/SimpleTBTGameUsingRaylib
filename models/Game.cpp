@@ -1,20 +1,54 @@
 //models/Game.cpp
 #include "models/Game.hpp"
-#include "controllers/generalController.hpp"   // MapData
+#include "controllers/generalController.hpp"   // MapData, terrainFromCode
 #include <algorithm>
+
+// Per-terrain defaults: walkable / moveCost / attackMod / defenseMod.
+struct TerrainDefaults {
+    bool walkable;
+    int  moveCost;
+    int  attackMod;
+    int  defenseMod;
+};
+static TerrainDefaults defaultsFor(Terrain t) {
+    switch (t) {
+        case Terrain::Plain:    return { true,  1, 100, 100 };
+        case Terrain::Road:     return { true,  1, 100,  90 };
+        case Terrain::Wood:     return { true,  2,  90,  75 };
+        case Terrain::Hill:     return { true,  2, 120,  90 };
+        case Terrain::Mountain: return { false, 3, 130,  60 };
+        case Terrain::Swamp:    return { true,  3,  80, 110 };
+        case Terrain::River:    return { false, 1, 100, 100 };
+    }
+    return { true, 1, 100, 100 };
+}
 
 Game::Game(const MapData& d)
     : map_(d.width, d.height), mapId_(d.id), mapName_(d.displayName)
 {
+    // First pass: stamp every tile with its terrain defaults.
+    for (int y = 0; y < d.height; ++y)
+        for (int x = 0; x < d.width; ++x) {
+            Tile& tile = map_.tileAt(x, y);
+            TerrainDefaults td = defaultsFor(tile.terrain);
+            tile.walkable   = td.walkable;
+            tile.moveCost   = td.moveCost;
+            tile.attackMod  = td.attackMod;
+            tile.defenseMod = td.defenseMod;
+        }
+
+    // Second pass: apply terrain spawns from the map data.
     for (const auto& t : d.terrain) {
         if (!map_.inBounds(t.x, t.y)) continue;
         Tile& tile = map_.tileAt(t.x, t.y);
-        switch (t.code) {
-            case 'F': tile.terrain = Terrain::Forest;   tile.moveCost = 2; break;
-            case '~': tile.terrain = Terrain::Water;    tile.walkable = false; break;
-            case '^': tile.terrain = Terrain::Mountain; tile.walkable = false; break;
-        }
+        tile.terrain = generalController::terrainFromCode(t.code);
+        TerrainDefaults td = defaultsFor(tile.terrain);
+        tile.walkable   = td.walkable;
+        tile.moveCost   = td.moveCost;
+        tile.attackMod  = td.attackMod;
+        tile.defenseMod = td.defenseMod;
     }
+
     int id = 1;
     for (const auto& s : d.units) {
         if (s.player) {
@@ -39,6 +73,8 @@ Game::Game(const MapData& d)
     }
 }
 
+// ---- lookups (must exist for the controller/HUD to link) ----
+
 UnitOwnInfantryLine* Game::ownById(int id) {
     for (auto& u : ownInfantry_) if (u.id == id) return &u;
     return nullptr;
@@ -56,23 +92,23 @@ bool Game::tileOccupied(int x, int y) const {
     return false;
 }
 
+// ---- combat helpers ----
+
 int Game::damageFrom(int attackPower, int hp, int maxHp) {
     if (maxHp <= 0) return 0;
-    // Proportional to attacker's remaining HP fraction, rounded, min 1.
     int dmg = (attackPower * hp + maxHp / 2) / maxHp;
     return std::max(1, dmg);
 }
 
 int Game::damageTakenBy(int incoming, int hp, int maxHp) {
     if (maxHp <= 0) return 0;
-    // Wounded units take proportionally less raw damage; min 1 so hits never heal.
     int dmg = (incoming * hp + maxHp / 2) / maxHp;
     return std::max(1, dmg);
 }
 
 bool Game::isGameOver() const {
     bool p = false, e = false;
-    for (const auto& u : ownInfantry_)   if (u.isAlive()) { p = true; break; }
+    for (const auto& u : ownInfantry_)    if (u.isAlive()) { p = true; break; }
     for (const auto& e2 : enemyInfantry_) if (e2.isAlive()) { e = true; break; }
     return !p || !e;
 }

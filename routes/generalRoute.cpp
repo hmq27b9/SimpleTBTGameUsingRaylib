@@ -13,7 +13,7 @@ generalRoute::generalRoute(const MapData& data) {
 void generalRoute::update() {
     if (scene_ != Scene::Battle) return;
 
-    // Track hovered tile every frame.
+    // Track hovered tile every frame (drives the HUD preview).
     Vector2 m = GetMousePosition();
     int ts = mapView_->tileSize();
     int ox = mapView_->originX();
@@ -38,7 +38,7 @@ void generalRoute::draw() {
 
     if (scene_ == Scene::Battle) {
         mapView_->draw(*game_);
-        unitView_->draw(*game_, *mapView_);
+        unitView_->draw(*game_, *mapView_, *controller_);
         hudView_->draw(*game_, *controller_);
         if (hoverGx_ >= 0)
             hudView_->drawHoverPreview(*game_, *controller_, hoverGx_, hoverGy_);

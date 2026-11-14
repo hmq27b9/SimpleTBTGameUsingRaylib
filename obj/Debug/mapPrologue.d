@@ -121,7 +121,8 @@
  /usr/include/x86_64-linux-gnu/bits/types/error_t.h \
  /usr/include/c++/15/bits/charconv.h \
  /usr/include/c++/15/bits/basic_string.tcc \
- ../models/UnitEnemyInfantryLine.hpp
+ ../models/UnitEnemyInfantryLine.hpp /usr/include/c++/15/utility \
+ /usr/include/c++/15/bits/stl_relops.h
 /usr/include/stdc-predef.h:
 ../views/mapPrologue/mapPrologue.hpp:
 ../controllers/generalController.hpp:
@@ -273,3 +274,5 @@
 /usr/include/c++/15/bits/charconv.h:
 /usr/include/c++/15/bits/basic_string.tcc:
 ../models/UnitEnemyInfantryLine.hpp:
+/usr/include/c++/15/utility:
+/usr/include/c++/15/bits/stl_relops.h:

@@ -2,6 +2,7 @@
 #pragma once
 #include "models/Game.hpp"
 #include <string>
+#include <utility>
 #include <vector>
 
 struct TerrainSpawn { int x, y; char code; };
@@ -27,6 +28,20 @@ public:
     void onMouseClick(int sx, int sy, int tileSize, int originX, int originY);
     void onEndTurnPressed();
 
+    static Terrain terrainFromCode(char code);
+
+    // Damage that would be dealt from attacker tile -> defender tile, after
+    // HP-scaling and both terrain modifiers. Same math as strike(), but pure.
+    int previewDamage(int atkPower, int atkHp, int atkMaxHp,
+                      int atkX, int atkY,
+                      int defHp, int defMaxHp,
+                      int defX, int defY) const;
+
+    // Every tile reachable from (sx,sy) within moveRange, using tile moveCost.
+    // Returned tiles exclude the origin and occupied/walkable-blocked tiles.
+    std::vector<std::pair<int,int>> reachableTiles(int sx, int sy, int moveRange) const;
+    bool isReachable(int sx, int sy, int moveRange, int tx, int ty) const;
+
 private:
     void handleTileClick(int gx, int gy);
     void tryMove(int gx, int gy);
@@ -36,7 +51,6 @@ private:
     void runEnemyTurn();
     bool tryEnemyStep(UnitEnemyInfantryLine& e);
 
-    // Resolve one strike: attacker -> defender, scaled by HP.
     void strike(UnitOwnInfantryLine& attacker, UnitEnemyInfantryLine& defender);
     void strike(UnitEnemyInfantryLine& attacker, UnitOwnInfantryLine& defender);
 
