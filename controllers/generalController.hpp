@@ -36,6 +36,10 @@ private:
     void runEnemyTurn();
     bool tryEnemyStep(UnitEnemyInfantryLine& e);
 
+    // Resolve one strike: attacker -> defender, scaled by HP.
+    void strike(UnitOwnInfantryLine& attacker, UnitEnemyInfantryLine& defender);
+    void strike(UnitEnemyInfantryLine& attacker, UnitOwnInfantryLine& defender);
+
     Game& game_;
     Phase phase_      = Phase::PlayerTurn;
     int   turnNumber_ = 1;

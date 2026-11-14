@@ -16,6 +16,7 @@ public:
     void draw();
 private:
     Scene scene_ = Scene::Battle;
+    int hoverGx_ = -1, hoverGy_ = -1;   // NEW
     std::unique_ptr<Game>              game_;
     std::unique_ptr<generalController> controller_;
     std::unique_ptr<mapView>           mapView_;

@@ -59,6 +59,22 @@ void generalController::tryMove(int gx, int gy) {
     sel->hasMoved = true;
 }
 
+// ---- one strike, damage scaled by both sides' HP ----
+
+void generalController::strike(UnitOwnInfantryLine& attacker,
+                               UnitEnemyInfantryLine& defender) {
+    int raw    = Game::damageFrom(attacker.attackPower, attacker.hp, attacker.maxHp);
+    int actual = Game::damageTakenBy(raw, defender.hp, defender.maxHp);
+    defender.hp -= actual;
+}
+
+void generalController::strike(UnitEnemyInfantryLine& attacker,
+                               UnitOwnInfantryLine& defender) {
+    int raw    = Game::damageFrom(attacker.attackPower, attacker.hp, attacker.maxHp);
+    int actual = Game::damageTakenBy(raw, defender.hp, defender.maxHp);
+    defender.hp -= actual;
+}
+
 void generalController::tryAttack(int gx, int gy) {
     UnitOwnInfantryLine* sel = game_.ownById(game_.selectedUnitId);
     if (!sel) return;
@@ -67,15 +83,25 @@ void generalController::tryAttack(int gx, int gy) {
         if (e.isAlive() && e.gridX == gx && e.gridY == gy) { target = &e; break; }
     if (!target) return;
     if (std::abs(gx - sel->gridX) + std::abs(gy - sel->gridY) > sel->attackRange) return;
-    target->hp -= sel->attackPower;
+
+    // Player strike
+    strike(*sel, *target);
     sel->hasActed = true;
+
+    // Counter-attack: defender survives and can reach the attacker
+    if (target->isAlive()) {
+        int d = std::abs(sel->gridX - target->gridX) +
+                std::abs(sel->gridY - target->gridY);
+        if (d <= target->attackRange)
+            strike(*target, *sel);
+    }
+
     game_.selectedUnitId = -1;
 }
 
 // ---- Enemy turn -------------------------------------------------
 
 bool generalController::tryEnemyStep(UnitEnemyInfantryLine& e) {
-    // Nearest living player
     const UnitOwnInfantryLine* nearest = nullptr;
     int bestDist = 9999;
     for (const auto& p : game_.ownInfantry()) {
@@ -116,15 +142,25 @@ void generalController::runEnemyTurn() {
         static const int dx[4] = {1, -1, 0, 0};
         static const int dy[4] = {0, 0, 1, -1};
         for (int i = 0; i < 4; ++i) {
+            UnitOwnInfantryLine* victim = nullptr;
             for (auto& p : game_.ownInfantry())
                 if (p.isAlive() &&
                     p.gridX == e.gridX + dx[i] &&
-                    p.gridY == e.gridY + dy[i]) {
-                    p.hp -= e.attackPower;
-                    goto next_enemy;
-                }
+                    p.gridY == e.gridY + dy[i]) { victim = &p; break; }
+            if (!victim) continue;
+
+            // Enemy strike
+            strike(e, *victim);
+
+            // Counter-attack: player survives and is adjacent (range 1 typical)
+            if (victim->isAlive()) {
+                int d = std::abs(e.gridX - victim->gridX) +
+                        std::abs(e.gridY - victim->gridY);
+                if (d <= victim->attackRange)
+                    strike(*victim, e);
+            }
+            break;   // one attack per enemy per turn
         }
-        next_enemy:;
     }
     game_.selectedUnitId = -1;
 }

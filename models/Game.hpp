@@ -28,6 +28,12 @@ public:
 
     bool tileOccupied(int x, int y) const;
 
+    // ---- combat ----
+    // Damage dealt scales with attacker's remaining HP fraction.
+    static int damageFrom(int attackPower, int hp, int maxHp);
+    // Damage actually taken scales with defender's remaining HP fraction.
+    static int damageTakenBy(int incoming, int hp, int maxHp);
+
     int selectedUnitId = -1;
     bool isGameOver() const;
 

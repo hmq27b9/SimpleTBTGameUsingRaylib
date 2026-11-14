@@ -1,6 +1,7 @@
 //models/Game.cpp
 #include "models/Game.hpp"
 #include "controllers/generalController.hpp"   // MapData
+#include <algorithm>
 
 Game::Game(const MapData& d)
     : map_(d.width, d.height), mapId_(d.id), mapName_(d.displayName)
@@ -53,6 +54,20 @@ bool Game::tileOccupied(int x, int y) const {
     for (const auto& e : enemyInfantry_)
         if (e.isAlive() && e.gridX == x && e.gridY == y) return true;
     return false;
+}
+
+int Game::damageFrom(int attackPower, int hp, int maxHp) {
+    if (maxHp <= 0) return 0;
+    // Proportional to attacker's remaining HP fraction, rounded, min 1.
+    int dmg = (attackPower * hp + maxHp / 2) / maxHp;
+    return std::max(1, dmg);
+}
+
+int Game::damageTakenBy(int incoming, int hp, int maxHp) {
+    if (maxHp <= 0) return 0;
+    // Wounded units take proportionally less raw damage; min 1 so hits never heal.
+    int dmg = (incoming * hp + maxHp / 2) / maxHp;
+    return std::max(1, dmg);
 }
 
 bool Game::isGameOver() const {
