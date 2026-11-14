@@ -5,6 +5,8 @@
 #include <vector>
 #include <algorithm>
 
+// ---------- terrain code mapping ----------
+
 Terrain generalController::terrainFromCode(char code) {
     switch (code) {
         case 'R': return Terrain::Road;
@@ -17,6 +19,42 @@ Terrain generalController::terrainFromCode(char code) {
     }
 }
 
+// ---------- input: mouse and keyboard share handleTileClick ----------
+
+void generalController::onMouseClick(int sx, int sy, int ts, int ox, int oy) {
+    handleTileClick((sx - ox) / ts, (sy - oy) / ts);
+}
+
+void generalController::onTileActivated(int gx, int gy) {
+    if (phase_ != Phase::PlayerTurn) return;
+    if (!game_.map().inBounds(gx, gy)) return;
+    handleTileClick(gx, gy);
+}
+
+void generalController::deselect() {
+    game_.selectedUnitId = -1;
+}
+
+void generalController::selectNextReadyUnit() {
+    if (phase_ != Phase::PlayerTurn) return;
+    auto& units = game_.ownInfantry();
+    if (units.empty()) return;
+
+    // Build the scan-order index list of ready units.
+    std::vector<int> ready;
+    for (size_t i = 0; i < units.size(); ++i)
+        if (units[i].isAlive() && !units[i].hasActed) ready.push_back((int)i);
+    if (ready.empty()) { game_.selectedUnitId = -1; return; }
+
+    // Find where the current selection sits in that list.
+    int currentPos = -1;
+    for (size_t i = 0; i < ready.size(); ++i)
+        if (units[ready[i]].id == game_.selectedUnitId) { currentPos = (int)i; break; }
+
+    int nextPos = (currentPos + 1) % (int)ready.size();
+    game_.selectedUnitId = units[ready[nextPos]].id;
+}
+
 // ---------- pathing: 4-dir Dijkstra weighted by moveCost ----------
 
 std::vector<std::pair<int,int>>
@@ -25,13 +63,12 @@ generalController::reachableTiles(int sx, int sy, int moveRange) const {
     const Map& m = game_.map();
     if (!m.inBounds(sx, sy)) return out;
 
-    // cost[x,y] = cheapest move-points to enter that tile from (sx,sy).
     std::vector<int> cost(m.width() * m.height(), -1);
     auto idx = [&](int x, int y) { return y * m.width() + x; };
 
     struct Node { int cost, x, y; };
     struct Cmp { bool operator()(const Node& a, const Node& b) const {
-        return a.cost > b.cost;   // min-heap
+        return a.cost > b.cost;
     }};
     std::priority_queue<Node, std::vector<Node>, Cmp> pq;
 
@@ -50,7 +87,7 @@ generalController::reachableTiles(int sx, int sy, int moveRange) const {
             if (!m.inBounds(nx, ny)) continue;
             const Tile& t = m.tileAt(nx, ny);
             if (!t.walkable) continue;
-            if (game_.tileOccupied(nx, ny)) continue;    // can't path through units
+            if (game_.tileOccupied(nx, ny)) continue;
 
             int step  = t.moveCost;
             int total = cur.cost + step;
@@ -85,7 +122,7 @@ bool generalController::inMoveRange(int gx, int gy, int moveRange,
     return isReachable(gx, gy, moveRange, tx, ty);
 }
 
-// ---------- combat: single source of truth for the numbers ----------
+// ---------- combat: single source of truth ----------
 
 int generalController::previewDamage(int atkPower, int atkHp, int atkMaxHp,
                                      int atkX, int atkY,
@@ -103,7 +140,6 @@ int generalController::previewDamage(int atkPower, int atkHp, int atkMaxHp,
 
 void generalController::strike(UnitOwnInfantryLine& attacker,
                                UnitEnemyInfantryLine& defender) {
-    // Delegate to previewDamage so HUD and gameplay can never diverge.
     int dmg = previewDamage(attacker.attackPower, attacker.hp, attacker.maxHp,
                             attacker.gridX, attacker.gridY,
                             defender.hp, defender.maxHp,
@@ -120,11 +156,7 @@ void generalController::strike(UnitEnemyInfantryLine& attacker,
     defender.hp -= dmg;
 }
 
-// ---------- input (unchanged apart from using the new range check) ----------
-
-void generalController::onMouseClick(int sx, int sy, int ts, int ox, int oy) {
-    handleTileClick((sx - ox) / ts, (sy - oy) / ts);
-}
+// ---------- core turn logic ----------
 
 void generalController::handleTileClick(int gx, int gy) {
     if (phase_ != Phase::PlayerTurn) return;
@@ -180,7 +212,8 @@ void generalController::tryAttack(int gx, int gy) {
     game_.selectedUnitId = -1;
 }
 
-// Enemy turn unchanged apart from using previewDamage via strike().
+// ---------- enemy turn ----------
+
 bool generalController::tryEnemyStep(UnitEnemyInfantryLine& e) {
     const UnitOwnInfantryLine* nearest = nullptr;
     int bestDist = 9999;

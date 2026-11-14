@@ -26,19 +26,25 @@ public:
     int   turnNumber() const { return turnNumber_; }
 
     void onMouseClick(int sx, int sy, int tileSize, int originX, int originY);
+
+    // Grid-space equivalent of "click this tile" — used by keyboard activation
+    // and reusable by tests. Delegates to the same handleTileClick.
+    void onTileActivated(int gx, int gy);
+
     void onEndTurnPressed();
+    void deselect();
+
+    // Advances selection to the next player unit that has not acted, in
+    // scan order, wrapping around. No-op if no such unit exists.
+    void selectNextReadyUnit();
 
     static Terrain terrainFromCode(char code);
 
-    // Damage that would be dealt from attacker tile -> defender tile, after
-    // HP-scaling and both terrain modifiers. Same math as strike(), but pure.
     int previewDamage(int atkPower, int atkHp, int atkMaxHp,
                       int atkX, int atkY,
                       int defHp, int defMaxHp,
                       int defX, int defY) const;
 
-    // Every tile reachable from (sx,sy) within moveRange, using tile moveCost.
-    // Returned tiles exclude the origin and occupied/walkable-blocked tiles.
     std::vector<std::pair<int,int>> reachableTiles(int sx, int sy, int moveRange) const;
     bool isReachable(int sx, int sy, int moveRange, int tx, int ty) const;
 

@@ -122,7 +122,14 @@
  /usr/include/c++/15/bits/basic_string.tcc \
  ../models/UnitEnemyInfantryLine.hpp ../controllers/generalController.hpp \
  /usr/include/c++/15/utility /usr/include/c++/15/bits/stl_relops.h \
- /usr/local/include/raylib.h
+ /usr/local/include/raylib.h /usr/include/c++/15/algorithm \
+ /usr/include/c++/15/bits/stl_algo.h \
+ /usr/include/c++/15/bits/algorithmfwd.h \
+ /usr/include/c++/15/bits/stl_heap.h \
+ /usr/include/c++/15/bits/uniform_int_dist.h \
+ /usr/include/c++/15/bits/stl_tempbuf.h \
+ /usr/include/c++/15/pstl/glue_algorithm_defs.h \
+ /usr/include/c++/15/pstl/execution_defs.h
 /usr/include/stdc-predef.h:
 ../views/components/hudView.hpp:
 ../models/Game.hpp:
@@ -277,3 +284,11 @@
 /usr/include/c++/15/utility:
 /usr/include/c++/15/bits/stl_relops.h:
 /usr/local/include/raylib.h:
+/usr/include/c++/15/algorithm:
+/usr/include/c++/15/bits/stl_algo.h:
+/usr/include/c++/15/bits/algorithmfwd.h:
+/usr/include/c++/15/bits/stl_heap.h:
+/usr/include/c++/15/bits/uniform_int_dist.h:
+/usr/include/c++/15/bits/stl_tempbuf.h:
+/usr/include/c++/15/pstl/glue_algorithm_defs.h:
+/usr/include/c++/15/pstl/execution_defs.h:

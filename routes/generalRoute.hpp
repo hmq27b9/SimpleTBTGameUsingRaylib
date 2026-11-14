@@ -14,9 +14,18 @@ public:
     explicit generalRoute(const MapData& initialMap);
     void update();
     void draw();
+
+    int cursorGx() const { return cursorGx_; }
+    int cursorGy() const { return cursorGy_; }
+
 private:
+    void trackMouseCursor();
+    void handleKeyboardInput();
+    void moveCursor(int dx, int dy);
+    void ensureCursorInBounds();
+
     Scene scene_ = Scene::Battle;
-    int hoverGx_ = -1, hoverGy_ = -1;
+    int cursorGx_ = -1, cursorGy_ = -1;
     std::unique_ptr<Game>              game_;
     std::unique_ptr<generalController> controller_;
     std::unique_ptr<mapView>           mapView_;
