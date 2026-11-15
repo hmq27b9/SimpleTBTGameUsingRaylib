@@ -30,6 +30,10 @@ static const char* terrainBlurb(Terrain t) {
     return "";
 }
 
+// Internal defenseMod is a multiplier on damage TAKEN.
+// Display it as a defense bonus: 100 - defenseMod (higher = better).
+static int defBonus(int defenseMod) { return 100 - defenseMod; }
+
 void hudView::draw(const Game& g, const generalController& ctrl) const {
     DrawText(g.mapName().c_str(), 820, 20, 22, GOLD);
 
@@ -53,7 +57,8 @@ void hudView::draw(const Game& g, const generalController& ctrl) const {
                      820, 250, 18, RAYWHITE);
             DrawText(TextFormat("On %s", terrainName(t.terrain)),
                      820, 272, 16, LIGHTGRAY);
-            DrawText(TextFormat("  atk x%d%%  def x%d%%", t.attackMod, t.defenseMod),
+            DrawText(TextFormat("  atk %+d%%  def %+d%%",
+                                t.attackMod - 100, defBonus(t.defenseMod)),
                      820, 290, 14, DARKGRAY);
         }
     }
@@ -84,8 +89,8 @@ void hudView::drawHoverPreview(const Game& g,
     DrawText(TextFormat("%d,%d  %s", hx, hy, terrainName(t.terrain)),
              820, y, 18, RAYWHITE); y += 22;
     DrawText(terrainBlurb(t.terrain), 820, y, 13, SKYBLUE); y += 18;
-    DrawText(TextFormat("move %d  |  atk x%d%%  def x%d%%",
-                        t.moveCost, t.attackMod, t.defenseMod),
+    DrawText(TextFormat("move %d  |  atk %+d%%  def %+d%%",
+                        t.moveCost, t.attackMod - 100, defBonus(t.defenseMod)),
              820, y, 13, LIGHTGRAY); y += 20;
 
     if (!t.walkable) {
@@ -156,6 +161,16 @@ void hudView::drawHoverPreview(const Game& g,
         } else {
             DrawText("  Target will be eliminated", 820, y, 13, GREEN); y += 16;
         }
+
+        // Show both tiles' contributions so the numbers are traceable.
+        const Tile& atkT = g.map().tileAt(sel->gridX, sel->gridY);
+        const Tile& defT = g.map().tileAt(target->gridX, target->gridY);
+        DrawText(TextFormat("Atk tile: %s (atk %+d%%)",
+                            terrainName(atkT.terrain), atkT.attackMod - 100),
+                 820, y, 13, DARKGRAY); y += 16;
+        DrawText(TextFormat("Def tile: %s (def %+d%%)",
+                            terrainName(defT.terrain), defBonus(defT.defenseMod)),
+                 820, y, 13, DARKGRAY); y += 16;
         return;
     }
 
