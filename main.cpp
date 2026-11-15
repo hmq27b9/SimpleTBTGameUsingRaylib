@@ -5,15 +5,19 @@
 
 int main() {
     InitWindow(1024, 720, "SimpleTBTGameUsingRaylib");
+    SetExitKey(KEY_NULL);
     SetTargetFPS(60);
 
-    MapData firstMission = mapPrologue::makeMapData();
-    generalRoute route(firstMission);
+    {
+        MapData firstMission = mapPrologue::makeMapData();
+        generalRoute route(firstMission);
 
-    while (!WindowShouldClose()) {
-        route.update();
-        route.draw();
-    }
+        while (!WindowShouldClose()) {
+            route.update();
+            route.draw();
+        }
+    }   // <-- route destroyed here, window still open
+
     CloseWindow();
     return 0;
 }
