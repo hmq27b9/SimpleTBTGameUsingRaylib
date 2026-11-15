@@ -12,11 +12,11 @@ int main() {
         MapData firstMission = mapPrologue::makeMapData();
         generalRoute route(firstMission);
 
-        while (!WindowShouldClose()) {
+        while (!WindowShouldClose() && !route.requestQuit()) {
             route.update();
             route.draw();
         }
-    }   // <-- route destroyed here, window still open
+    }   // destroy route (and its render texture) before CloseWindow
 
     CloseWindow();
     return 0;

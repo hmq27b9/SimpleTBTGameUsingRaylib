@@ -19,6 +19,8 @@ public:
     void update();
     void draw();
 
+    bool requestQuit() const { return requestQuit_; }
+
     int cursorGx() const { return cursorGx_; }
     int cursorGy() const { return cursorGy_; }
 
@@ -26,6 +28,7 @@ private:
     void trackMouseCursor();
     void handleKeyboardInput();
     void handleSettingsInput();
+    void handleGameOverInput();
     void moveCursor(int dx, int dy);
     void ensureCursorInBounds();
 
@@ -34,8 +37,16 @@ private:
     void applySettings(int presetIndex, bool fullscreen);
     void toggleFullscreen();
 
+    void restartGame();
+    Vector2 gameOverButtonCenter(int index) const;   // 0 = Restart, 1 = Quit
+    Rectangle gameOverButtonRect(int index) const;
+    int     gameOverHoveredButton() const;           // -1 if none
+
     Scene scene_ = Scene::Battle;
+    bool  requestQuit_ = false;
     int cursorGx_ = -1, cursorGy_ = -1;
+
+    MapData originalMap_;      // kept so Restart can rebuild the game
 
     std::unique_ptr<Game>              game_;
     std::unique_ptr<generalController> controller_;

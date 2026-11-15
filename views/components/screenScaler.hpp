@@ -2,22 +2,17 @@
 #pragma once
 #include "raylib.h"
 
-// Renders everything at a fixed virtual resolution (baseW x baseH) into an
-// off-screen texture, then blits it to the real window with aspect-preserving
-// letterboxing. All views keep working in virtual coordinates.
 class screenScaler {
 public:
+    static constexpr int SS = 2;   // supersample factor for text/shapes
+
     screenScaler(int baseW, int baseH);
     ~screenScaler();
 
     screenScaler(const screenScaler&)            = delete;
     screenScaler& operator=(const screenScaler&) = delete;
 
-    // Call instead of BeginDrawing(). Opens the render-texture pass.
     void beginVirtual();
-
-    // Call instead of EndDrawing(). Closes the render-texture pass, blits it
-    // to the window scaled to fit, and calls EndDrawing().
     void endVirtual();
 
     int baseWidth()  const { return baseW_; }
@@ -28,6 +23,9 @@ private:
     RenderTexture2D target_;
 };
 
-// Helper: convert a real-window mouse position into virtual coordinates,
-// so hit-testing still works when the window is bigger than the base size.
+// Draw text at a LOGICAL font size and LOGICAL position, but rasterized at
+// SS times the density so it stays sharp when the frame is scaled up.
+void DrawTextHi(const char* text, int x, int y, int sz, Color c);
+void DrawTextHi(const char* text, float x, float y, float sz, Color c);
+
 Vector2 realToVirtual(Vector2 realPos, int baseW, int baseH);

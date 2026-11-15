@@ -1,16 +1,52 @@
 //routes/generalRoute.cpp
 #include "routes/generalRoute.hpp"
 #include "raylib.h"
+#include "views/components/screenScaler.hpp"
 #include <algorithm>
 
-generalRoute::generalRoute(const MapData& data) {
+// -------- Game-over button layout (logical coords, 1280x720 frame) --------
+
+static constexpr int   GOBTN_W       = 220;
+static constexpr int   GOBTN_H       = 56;
+static constexpr int   GOBTN_GAP     = 40;
+static constexpr int   GOBTN_Y       = 460;   // top of the button row
+static constexpr float GOBTN_HOVER_GROW = 4.0f;
+
+// Button index: 0 = Restart, 1 = Quit
+Rectangle generalRoute::gameOverButtonRect(int index) const {
+    int total = GOBTN_W * 2 + GOBTN_GAP;
+    int startX = (1280 - total) / 2;
+    int x = startX + index * (GOBTN_W + GOBTN_GAP);
+    return Rectangle{ (float)x, (float)GOBTN_Y,
+                      (float)GOBTN_W, (float)GOBTN_H };
+}
+
+Vector2 generalRoute::gameOverButtonCenter(int index) const {
+    Rectangle r = gameOverButtonRect(index);
+    return Vector2{ r.x + r.width / 2, r.y + r.height / 2 };
+}
+
+int generalRoute::gameOverHoveredButton() const {
+    Vector2 mouse = realToVirtual(GetMousePosition(),
+                                  scaler_->baseWidth(),
+                                  scaler_->baseHeight());
+    for (int i = 0; i < 2; ++i) {
+        Rectangle r = gameOverButtonRect(i);
+        if (CheckCollisionPointRec(mouse, r)) return i;
+    }
+    return -1;
+}
+
+// -------- Constructor / destructor --------
+
+generalRoute::generalRoute(const MapData& data) : originalMap_(data) {
     game_       = std::make_unique<Game>(data);
     controller_ = std::make_unique<generalController>(*game_);
-    mapView_    = std::make_unique<mapView>(56, 40, 60);       // virtual px
+    mapView_    = std::make_unique<mapView>(56, 40, 60);
     unitView_   = std::make_unique<unitView>();
     hudView_    = std::make_unique<hudView>();
     configView_ = std::make_unique<configView>();
-    scaler_     = std::make_unique<screenScaler>(1280, 720);   // was 1024, 720
+    scaler_     = std::make_unique<screenScaler>(1280, 720);
     ensureCursorInBounds();
 }
 
@@ -19,10 +55,8 @@ generalRoute::~generalRoute() = default;
 void generalRoute::ensureCursorInBounds() {
     const Map& m = game_->map();
     if (!m.inBounds(cursorGx_, cursorGy_)) {
-        // Start on the first living player unit so the cursor is meaningful.
         for (const auto& u : game_->ownInfantry())
             if (u.isAlive()) { cursorGx_ = u.gridX; cursorGy_ = u.gridY; return; }
-        // Fallback: center of the map.
         cursorGx_ = m.width()  / 2;
         cursorGy_ = m.height() / 2;
     }
@@ -33,15 +67,10 @@ void generalRoute::moveCursor(int dx, int dy) {
     if (!m.inBounds(cursorGx_, cursorGy_)) { ensureCursorInBounds(); return; }
     int nx = cursorGx_ + dx;
     int ny = cursorGy_ + dy;
-    if (m.inBounds(nx, ny)) {
-        cursorGx_ = nx;
-        cursorGy_ = ny;
-    }
+    if (m.inBounds(nx, ny)) { cursorGx_ = nx; cursorGy_ = ny; }
 }
 
 void generalRoute::trackMouseCursor() {
-    // Convert the real-window mouse position into virtual coordinates so
-    // hit-testing still lands on the right tile when the window is scaled.
     Vector2 real = GetMousePosition();
     Vector2 v    = realToVirtual(real, scaler_->baseWidth(), scaler_->baseHeight());
 
@@ -50,13 +79,24 @@ void generalRoute::trackMouseCursor() {
     int oy = mapView_->originY();
     int gx = (int)((v.x - ox) / ts);
     int gy = (int)((v.y - oy) / ts);
-    if (game_->map().inBounds(gx, gy)) {
-        cursorGx_ = gx;
-        cursorGy_ = gy;
-    }
-    // Off-board: leave the cursor where it is so keyboard users don't lose
-    // their place just because they nudged the mouse.
+    if (game_->map().inBounds(gx, gy)) { cursorGx_ = gx; cursorGy_ = gy; }
 }
+
+// -------- Restart --------
+
+void generalRoute::restartGame() {
+    game_       = std::make_unique<Game>(originalMap_);
+    controller_ = std::make_unique<generalController>(*game_);
+
+    // Keep screen-settings intact; they persist across restart.
+    scene_       = Scene::Battle;
+    cursorGx_    = -1;
+    cursorGy_    = -1;
+    requestQuit_ = false;
+    ensureCursorInBounds();
+}
+
+// -------- Keyboard / settings / game over --------
 
 void generalRoute::handleKeyboardInput() {
     if (IsKeyPressed(KEY_LEFT)  || IsKeyPressed(KEY_A)) moveCursor(-1,  0);
@@ -72,52 +112,8 @@ void generalRoute::handleKeyboardInput() {
     if (IsKeyPressed(KEY_E))       controller_->onEndTurnPressed();
     if (IsKeyPressed(KEY_TAB))     controller_->selectNextReadyUnit();
 
-    // Settings + fullscreen shortcuts.
     if (IsKeyPressed(KEY_O) || IsKeyPressed(KEY_F1)) openSettings();
     if (IsKeyPressed(KEY_F11))                        toggleFullscreen();
-}
-
-// ---- settings ----
-
-void generalRoute::openSettings() {
-    if (scene_ != Scene::Battle) return;
-    settingsPreview_ = settings_;
-    scene_ = Scene::Settings;
-}
-
-void generalRoute::closeSettings(bool apply) {
-    if (scene_ != Scene::Settings) return;
-    if (apply) {
-        settings_ = settingsPreview_;
-        applySettings(settings_.presetIndex, settings_.fullscreen);
-    }
-    // On cancel we do nothing — the window was never mutated while the menu
-    // was open (F only edits the preview), so there is nothing to revert.
-    scene_ = Scene::Battle;
-}
-
-void generalRoute::toggleFullscreen() {
-    ToggleFullscreen();
-    settings_.fullscreen        = IsWindowFullscreen();
-    settingsPreview_.fullscreen = settings_.fullscreen;
-}
-
-void generalRoute::applySettings(int presetIndex, bool fullscreen) {
-    const auto& presets = resolutionPresets();
-    if (presetIndex < 0) presetIndex = 0;
-    if (presetIndex >= (int)presets.size()) presetIndex = (int)presets.size() - 1;
-    const ResolutionPreset& p = presets[presetIndex];
-
-    if (fullscreen) {
-        // Size the windowed backbuffer first so exiting fullscreen later
-        // restores this resolution; then enter true fullscreen.
-        if (IsWindowFullscreen()) ToggleFullscreen();
-        SetWindowSize(p.w, p.h);
-        if (!IsWindowFullscreen()) ToggleFullscreen();
-    } else {
-        if (IsWindowFullscreen()) ToggleFullscreen();
-        SetWindowSize(p.w, p.h);
-    }
 }
 
 void generalRoute::handleSettingsInput() {
@@ -138,22 +134,76 @@ void generalRoute::handleSettingsInput() {
     if (IsKeyPressed(KEY_ESCAPE))                           closeSettings(false);
 }
 
-// ---- main loop hooks ----
+void generalRoute::handleGameOverInput() {
+    // Keyboard: R restarts, ESC quits (Ctrl+Q handled globally in update()).
+    if (IsKeyPressed(KEY_R)) restartGame();
+    if (IsKeyPressed(KEY_ESCAPE)) requestQuit_ = true;
+
+    // Mouse: click a button.
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        int hovered = gameOverHoveredButton();
+        if (hovered == 0) restartGame();
+        else if (hovered == 1) requestQuit_ = true;
+    }
+}
+
+// -------- Settings (unchanged from previous version) --------
+
+void generalRoute::openSettings() {
+    if (scene_ != Scene::Battle) return;
+    settingsPreview_ = settings_;
+    scene_ = Scene::Settings;
+}
+
+void generalRoute::closeSettings(bool apply) {
+    if (scene_ != Scene::Settings) return;
+    if (apply) {
+        settings_ = settingsPreview_;
+        applySettings(settings_.presetIndex, settings_.fullscreen);
+    }
+    scene_ = Scene::Battle;
+}
+
+void generalRoute::toggleFullscreen() {
+    ToggleFullscreen();
+    settings_.fullscreen        = IsWindowFullscreen();
+    settingsPreview_.fullscreen = settings_.fullscreen;
+}
+
+void generalRoute::applySettings(int presetIndex, bool fullscreen) {
+    const auto& presets = resolutionPresets();
+    if (presetIndex < 0) presetIndex = 0;
+    if (presetIndex >= (int)presets.size()) presetIndex = (int)presets.size() - 1;
+    const ResolutionPreset& p = presets[presetIndex];
+
+    if (fullscreen) {
+        if (IsWindowFullscreen()) ToggleFullscreen();
+        SetWindowSize(p.w, p.h);
+        if (!IsWindowFullscreen()) ToggleFullscreen();
+    } else {
+        if (IsWindowFullscreen()) ToggleFullscreen();
+        SetWindowSize(p.w, p.h);
+    }
+}
+
+// -------- Main loop hooks --------
 
 void generalRoute::update() {
-    if (scene_ == Scene::Settings) {
-        handleSettingsInput();
-        return;
+    // Ctrl+Q quits from ANY scene.
+    if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
+        IsKeyPressed(KEY_Q)) {
+        requestQuit_ = true;
     }
-    if (scene_ != Scene::Battle) return;
+    if (requestQuit_) return;
 
-    // Mouse hover updates the cursor when the mouse is over a tile; keyboard
-    // then nudges from wherever the cursor currently sits.
+    if (scene_ == Scene::Settings) { handleSettingsInput(); return; }
+    if (scene_ == Scene::GameOver) { handleGameOverInput(); return; }
+
+    // scene_ == Scene::Battle
     trackMouseCursor();
     handleKeyboardInput();
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        // Convert the real mouse position to virtual space before hit-testing.
         Vector2 real = GetMousePosition();
         Vector2 v    = realToVirtual(real, scaler_->baseWidth(), scaler_->baseHeight());
         controller_->onMouseClick((int)v.x, (int)v.y,
@@ -166,10 +216,23 @@ void generalRoute::update() {
         scene_ = Scene::GameOver;
 }
 
+// -------- Draw --------
+
+static void drawButton(Rectangle r, const char* label, bool hovered) {
+    Color fill    = hovered ? Color{  80, 140, 200, 255 } : Color{ 50,  60,  80, 255 };
+    Color outline = hovered ? SKYBLUE                    : GOLD;
+    DrawRectangleRec(r, fill);
+    DrawRectangleLinesEx(r, 2.0f, outline);
+
+    // Centre the label inside the button.
+    int fs = 22;
+    int tw = MeasureText(label, fs);
+    int tx = (int)(r.x + (r.width  - tw) / 2);
+    int ty = (int)(r.y + (r.height - fs) / 2);
+    DrawTextHi(label, tx, ty, fs, RAYWHITE);
+}
+
 void generalRoute::draw() {
-    // Render everything at the fixed virtual resolution; screenScaler blits
-    // the result to the real window with letterboxing. This is what makes
-    // the map, units, HUD and settings overlay all scale uniformly.
     scaler_->beginVirtual();
 
     if (scene_ == Scene::Battle || scene_ == Scene::Settings) {
@@ -185,8 +248,32 @@ void generalRoute::draw() {
                               scaler_->baseWidth(),
                               scaler_->baseHeight());
     } else {
-        DrawText("GAME OVER", 340, 280, 60, RED);
-        DrawText("Press ESC to quit", 380, 360, 20, LIGHTGRAY);
+        // ---- Game over screen ----
+        DrawTextHi("GAME OVER", 430, 220, 60, RED);
+        DrawTextHi("Press R to restart, ESC to quit, or click below",
+                   300, 320, 18, LIGHTGRAY);
+
+        int hovered = gameOverHoveredButton();
+
+        // Restart button
+        Rectangle r0 = gameOverButtonRect(0);
+        if (hovered == 0) {
+            r0.x      -= GOBTN_HOVER_GROW;
+            r0.y      -= GOBTN_HOVER_GROW;
+            r0.width  += GOBTN_HOVER_GROW * 2;
+            r0.height += GOBTN_HOVER_GROW * 2;
+        }
+        drawButton(r0, "RESTART", hovered == 0);
+
+        // Quit button
+        Rectangle r1 = gameOverButtonRect(1);
+        if (hovered == 1) {
+            r1.x      -= GOBTN_HOVER_GROW;
+            r1.y      -= GOBTN_HOVER_GROW;
+            r1.width  += GOBTN_HOVER_GROW * 2;
+            r1.height += GOBTN_HOVER_GROW * 2;
+        }
+        drawButton(r1, "QUIT", hovered == 1);
     }
 
     scaler_->endVirtual();

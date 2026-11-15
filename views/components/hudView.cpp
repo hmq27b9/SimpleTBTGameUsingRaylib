@@ -1,5 +1,6 @@
 //views/components/hudView.cpp
 #include "views/components/hudView.hpp"
+#include "views/components/screenScaler.hpp"
 #include <cstdlib>
 #include <algorithm>
 
@@ -16,6 +17,7 @@ static const char* terrainName(Terrain t) {
     return "?";
 }
 
+// Short flavor line so the player understands *why* the mods are what they are.
 static const char* terrainBlurb(Terrain t) {
     switch (t) {
         case Terrain::Plain:    return "Open ground - no modifiers";
@@ -29,35 +31,45 @@ static const char* terrainBlurb(Terrain t) {
     return "";
 }
 
+// Internal defenseMod is a multiplier on damage TAKEN.
+// Display it as a defense bonus: 100 - defenseMod (higher = better).
 static int defBonus(int defenseMod) { return 100 - defenseMod; }
 
+// HUD column. Virtual frame is 1280 wide; the map occupies up to ~712px on
+// the left, so the HUD lives at x=840 with ~440px of runway to the right edge.
+static constexpr int HUD_X = 840;
+
 void hudView::draw(const Game& g, const generalController& ctrl) const {
-    DrawText(g.mapName().c_str(), 840, 20, 22, GOLD);
+    DrawTextHi(g.mapName().c_str(), HUD_X, 20, 22, GOLD);
 
     const char* phaseTxt =
         ctrl.phase() == Phase::PlayerTurn ? "PLAYER TURN" :
         ctrl.phase() == Phase::EnemyTurn  ? "ENEMY TURN"  : "BATTLE OVER";
-    DrawText(phaseTxt, 840, 50, 22, RAYWHITE);
-    DrawText(TextFormat("Turn %d", ctrl.turnNumber()), 840, 78, 18, LIGHTGRAY);
+    DrawTextHi(phaseTxt, HUD_X, 50, 22, RAYWHITE);
+    DrawTextHi(TextFormat("Turn %d", ctrl.turnNumber()), HUD_X, 78, 18, LIGHTGRAY);
 
-    DrawText("[ARROWS] Move cursor", 840, 104, 14, LIGHTGRAY);
-    DrawText("[ENTER/SPACE] Act", 840, 122, 14, LIGHTGRAY);
-    DrawText("[TAB] Next unit   [ESC] Deselect", 840, 140, 14, LIGHTGRAY);
-    DrawText("[E] End turn", 840, 158, 14, LIGHTGRAY);
-    DrawText("[F1/O] Settings   [F11] Fullscreen", 840, 176, 14, SKYBLUE);
+    DrawTextHi("[ARROWS] Move cursor", HUD_X, 104, 14, LIGHTGRAY);
+    DrawTextHi("[ENTER/SPACE] Act", HUD_X, 122, 14, LIGHTGRAY);
+    DrawTextHi("[TAB] Next unit", HUD_X, 140, 14, LIGHTGRAY);
+    DrawTextHi("[ESC] Deselect", HUD_X, 158, 14, LIGHTGRAY);
+    DrawTextHi("[E] End turn", HUD_X, 176, 14, LIGHTGRAY);
+    DrawTextHi("[F1/O] Settings", HUD_X, 194, 14, SKYBLUE);
+    DrawTextHi("[F11] Fullscreen", HUD_X, 212, 14, SKYBLUE);
+    DrawTextHi("[Ctrl+Q] Quit", HUD_X, 230, 14, SKYBLUE);
 
     if (g.selectedUnitId != -1) {
         if (const UnitOwnInfantryLine* u = const_cast<Game&>(g).ownById(g.selectedUnitId)) {
             const Tile& t = g.map().tileAt(u->gridX, u->gridY);
-            DrawText(u->name.c_str(), 840, 200, 22, YELLOW);
-            DrawText(TextFormat("HP %d/%d", u->hp, u->maxHp), 840, 228, 18, RAYWHITE);
-            DrawText(TextFormat("ATK %d  RNG %d", u->attackPower, u->attackRange),
-                     840, 250, 18, RAYWHITE);
-            DrawText(TextFormat("On %s", terrainName(t.terrain)),
-                     840, 272, 16, LIGHTGRAY);
-            DrawText(TextFormat("  atk %+d%%  def %+d%%",
-                                t.attackMod - 100, defBonus(t.defenseMod)),
-                     840, 290, 14, DARKGRAY);
+            DrawTextHi(u->name.c_str(), HUD_X, 264, 22, YELLOW);
+            DrawTextHi(TextFormat("HP %d/%d", u->hp, u->maxHp),
+                       HUD_X, 292, 18, RAYWHITE);
+            DrawTextHi(TextFormat("ATK %d  RNG %d", u->attackPower, u->attackRange),
+                       HUD_X, 314, 18, RAYWHITE);
+            DrawTextHi(TextFormat("On %s", terrainName(t.terrain)),
+                       HUD_X, 336, 16, LIGHTGRAY);
+            DrawTextHi(TextFormat("  atk %+d%%  def %+d%%",
+                                  t.attackMod - 100, defBonus(t.defenseMod)),
+                       HUD_X, 354, 14, DARKGRAY);
         }
     }
 }
@@ -79,46 +91,51 @@ void hudView::drawHoverPreview(const Game& g,
     if (ctrl.phase() != Phase::PlayerTurn) return;
     if (!g.map().inBounds(hx, hy)) return;
 
+    // ---- Section 1: always show what the cursor is on ----
     const Tile& t = g.map().tileAt(hx, hy);
-    int y = 320;
+    int y = 384;
 
-    DrawText("CURSOR TILE", 840, y, 12, DARKGRAY); y += 16;
-    DrawText(TextFormat("%d,%d  %s", hx, hy, terrainName(t.terrain)),
-             840, y, 18, RAYWHITE); y += 22;
-    DrawText(terrainBlurb(t.terrain), 840, y, 13, SKYBLUE); y += 18;
-    DrawText(TextFormat("move %d  |  atk %+d%%  def %+d%%",
-                        t.moveCost, t.attackMod - 100, defBonus(t.defenseMod)),
-             840, y, 13, LIGHTGRAY); y += 20;
+    DrawTextHi("CURSOR TILE", HUD_X, y, 12, DARKGRAY); y += 16;
+    DrawTextHi(TextFormat("%d,%d  %s", hx, hy, terrainName(t.terrain)),
+               HUD_X, y, 18, RAYWHITE); y += 22;
+    DrawTextHi(terrainBlurb(t.terrain), HUD_X, y, 13, SKYBLUE); y += 18;
+    DrawTextHi(TextFormat("move %d  |  atk %+d%%  def %+d%%",
+                          t.moveCost, t.attackMod - 100, defBonus(t.defenseMod)),
+               HUD_X, y, 13, LIGHTGRAY); y += 20;
 
     if (!t.walkable) {
-        DrawText("(impassable)", 840, y, 13, ORANGE); y += 18;
+        DrawTextHi("(impassable)", HUD_X, y, 13, ORANGE); y += 18;
     }
 
+    // Who stands here, if anyone.
     if (const UnitOwnInfantryLine* u = ownAt(g, hx, hy)) {
-        DrawText(TextFormat("Friendly: %s  HP %d/%d", u->name.c_str(), u->hp, u->maxHp),
-                 840, y, 14, SKYBLUE); y += 18;
+        DrawTextHi(TextFormat("Friendly: %s  HP %d/%d",
+                              u->name.c_str(), u->hp, u->maxHp),
+                   HUD_X, y, 14, SKYBLUE); y += 18;
     } else if (const UnitEnemyInfantryLine* e = enemyAt(g, hx, hy)) {
-        DrawText(TextFormat("Hostile: %s  HP %d/%d", e->name.c_str(), e->hp, e->maxHp),
-                 840, y, 14, RED); y += 18;
+        DrawTextHi(TextFormat("Hostile: %s  HP %d/%d",
+                              e->name.c_str(), e->hp, e->maxHp),
+                   HUD_X, y, 14, RED); y += 18;
     } else {
-        DrawText("(empty)", 840, y, 13, DARKGRAY); y += 18;
+        DrawTextHi("(empty)", HUD_X, y, 13, DARKGRAY); y += 18;
     }
 
     y += 6;
 
+    // ---- Section 2: action preview (only if a unit is selected) ----
     if (g.selectedUnitId == -1) return;
 
     const UnitOwnInfantryLine* sel = const_cast<Game&>(g).ownById(g.selectedUnitId);
     if (!sel) return;
 
-    DrawText("ACTION", 840, y, 12, DARKGRAY); y += 16;
+    DrawTextHi("ACTION", HUD_X, y, 12, DARKGRAY); y += 16;
 
     const UnitEnemyInfantryLine* target = enemyAt(g, hx, hy);
     if (target) {
         int dist = std::abs(target->gridX - sel->gridX) +
                    std::abs(target->gridY - sel->gridY);
         if (dist > sel->attackRange) {
-            DrawText("Target out of range", 840, y, 15, DARKGRAY);
+            DrawTextHi("Target out of range", HUD_X, y, 15, DARKGRAY);
             return;
         }
 
@@ -128,11 +145,11 @@ void hudView::drawHoverPreview(const Game& g,
                                        target->gridX, target->gridY);
         int targetHpAfter = std::max(0, target->hp - dealt);
 
-        DrawText(TextFormat("Attack %s", target->name.c_str()), 840, y, 16, ORANGE);
-        y += 20;
-        DrawText(TextFormat("  Deal %d  (%d -> %d)",
-                            dealt, target->hp, targetHpAfter),
-                 840, y, 14, ORANGE); y += 18;
+        DrawTextHi(TextFormat("Attack %s", target->name.c_str()),
+                   HUD_X, y, 16, ORANGE); y += 20;
+        DrawTextHi(TextFormat("  Deal %d  (%d -> %d)",
+                              dealt, target->hp, targetHpAfter),
+                   HUD_X, y, 14, ORANGE); y += 18;
 
         if (targetHpAfter > 0) {
             int counterDist = std::abs(sel->gridX - target->gridX) +
@@ -144,35 +161,40 @@ void hudView::drawHoverPreview(const Game& g,
                                                    sel->hp, sel->maxHp,
                                                    sel->gridX, sel->gridY);
                 int selHpAfter = std::max(0, sel->hp - backDealt);
-                DrawText(TextFormat("  Take %d  (%d -> %d)",
-                                    backDealt, sel->hp, selHpAfter),
-                         840, y, 14, PURPLE); y += 18;
+                DrawTextHi(TextFormat("  Take %d  (%d -> %d)",
+                                      backDealt, sel->hp, selHpAfter),
+                           HUD_X, y, 14, PURPLE); y += 18;
             } else {
-                DrawText("  No counter (out of its range)", 840, y, 13, DARKGRAY); y += 16;
+                DrawTextHi("  No counter (out of its range)",
+                           HUD_X, y, 13, DARKGRAY); y += 16;
             }
         } else {
-            DrawText("  Target will be eliminated", 840, y, 13, GREEN); y += 16;
+            DrawTextHi("  Target will be eliminated",
+                       HUD_X, y, 13, GREEN); y += 16;
         }
 
+        // Show both tiles' contributions so the numbers are traceable.
         const Tile& atkT = g.map().tileAt(sel->gridX, sel->gridY);
         const Tile& defT = g.map().tileAt(target->gridX, target->gridY);
-        DrawText(TextFormat("Atk tile: %s (atk %+d%%)",
-                            terrainName(atkT.terrain), atkT.attackMod - 100),
-                 840, y, 13, DARKGRAY); y += 16;
-        DrawText(TextFormat("Def tile: %s (def %+d%%)",
-                            terrainName(defT.terrain), defBonus(defT.defenseMod)),
-                 840, y, 13, DARKGRAY); y += 16;
+        DrawTextHi(TextFormat("Atk tile: %s (atk %+d%%)",
+                              terrainName(atkT.terrain), atkT.attackMod - 100),
+                   HUD_X, y, 13, DARKGRAY); y += 16;
+        DrawTextHi(TextFormat("Def tile: %s (def %+d%%)",
+                              terrainName(defT.terrain), defBonus(defT.defenseMod)),
+                   HUD_X, y, 13, DARKGRAY); y += 16;
         return;
     }
 
+    // No enemy: if it's a reachable empty tile, say so.
     if (ownAt(g, hx, hy)) {
-        DrawText("Own unit (Act to reselect)", 840, y, 14, YELLOW);
+        DrawTextHi("Own unit (Act to reselect)", HUD_X, y, 14, YELLOW);
         return;
     }
 
     if (ctrl.isReachable(sel->gridX, sel->gridY, sel->moveRange, hx, hy)) {
-        DrawText(TextFormat("Move here (cost %d)", t.moveCost), 840, y, 15, SKYBLUE);
+        DrawTextHi(TextFormat("Move here (cost %d)", t.moveCost),
+                   HUD_X, y, 15, SKYBLUE);
     } else {
-        DrawText("Not reachable", 840, y, 14, DARKGRAY);
+        DrawTextHi("Not reachable", HUD_X, y, 14, DARKGRAY);
     }
 }

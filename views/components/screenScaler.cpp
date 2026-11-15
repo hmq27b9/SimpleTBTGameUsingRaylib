@@ -1,44 +1,71 @@
 //views/components/screenScaler.cpp
 #include "views/components/screenScaler.hpp"
+#include "rlgl.h"
 #include <algorithm>
+#include <cmath>
 
 screenScaler::screenScaler(int baseW, int baseH) : baseW_(baseW), baseH_(baseH) {
-    target_ = LoadRenderTexture(baseW_, baseH_);
-    // Nearest-neighbour keeps the pixel-art tiles crisp when scaled up.
-    SetTextureFilter(target_.texture, TEXTURE_FILTER_POINT);
+    target_ = LoadRenderTexture(baseW_ * SS, baseH_ * SS);
+    SetTextureFilter(target_.texture, TEXTURE_FILTER_BILINEAR);
 }
 
 screenScaler::~screenScaler() {
-    UnloadRenderTexture(target_);
+    if (IsWindowReady()) UnloadRenderTexture(target_);
 }
 
 void screenScaler::beginVirtual() {
     BeginTextureMode(target_);
     ClearBackground({ 30, 30, 40, 255 });
+
+    // Shapes (rectangles/lines) inherit this 2x modelview scale, so they
+    // render at SS-times density without any call-site changes.
+    rlPushMatrix();
+    rlScalef((float)SS, (float)SS, 1.0f);
 }
 
 void screenScaler::endVirtual() {
+    rlPopMatrix();
     EndTextureMode();
 
     BeginDrawing();
-    ClearBackground(BLACK);   // letterbox bars
+    ClearBackground(BLACK);
 
     int sw = GetScreenWidth();
     int sh = GetScreenHeight();
 
-    // Fit the virtual frame inside the window without distorting aspect.
     float scale = std::min((float)sw / baseW_, (float)sh / baseH_);
     int dw = (int)(baseW_ * scale);
     int dh = (int)(baseH_ * scale);
     int dx = (sw - dw) / 2;
     int dy = (sh - dh) / 2;
 
-    // Render textures are stored flipped in OpenGL — invert source height.
-    Rectangle src = { 0, 0, (float)baseW_, (float)-baseH_ };
+    Rectangle src = { 0, 0, (float)target_.texture.width, -(float)target_.texture.height };
     Rectangle dst = { (float)dx, (float)dy, (float)dw, (float)dh };
     DrawTexturePro(target_.texture, src, dst, { 0, 0 }, 0.0f, WHITE);
 
     EndDrawing();
+}
+
+void DrawTextHi(const char* text, int x, int y, int sz, Color c) {
+    // Bypass the ambient rlScalef so we can rasterize glyphs at SS*size
+    // (sharp) instead of blitting size-sized glyphs and stretching them
+    // (blurry). Position is multiplied manually to stay in the same visual
+    // spot the call site expects.
+    rlPushMatrix();
+    rlLoadIdentity();
+    DrawText(text, x * screenScaler::SS, y * screenScaler::SS,
+             sz * screenScaler::SS, c);
+    rlPopMatrix();
+}
+
+void DrawTextHi(const char* text, float x, float y, float sz, Color c) {
+    rlPushMatrix();
+    rlLoadIdentity();
+    DrawText(text,
+             (int)std::round(x * screenScaler::SS),
+             (int)std::round(y * screenScaler::SS),
+             (int)std::round(sz * screenScaler::SS), c);
+    rlPopMatrix();
 }
 
 Vector2 realToVirtual(Vector2 realPos, int baseW, int baseH) {
@@ -52,8 +79,5 @@ Vector2 realToVirtual(Vector2 realPos, int baseW, int baseH) {
     int dx = (sw - dw) / 2;
     int dy = (sh - dh) / 2;
 
-    // Inverse of the blit transform.
-    float vx = (realPos.x - dx) / scale;
-    float vy = (realPos.y - dy) / scale;
-    return { vx, vy };
+    return { (realPos.x - dx) / scale, (realPos.y - dy) / scale };
 }
