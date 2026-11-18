@@ -9,10 +9,9 @@
 static constexpr int   GOBTN_W       = 220;
 static constexpr int   GOBTN_H       = 56;
 static constexpr int   GOBTN_GAP     = 40;
-static constexpr int   GOBTN_Y       = 460;   // top of the button row
+static constexpr int   GOBTN_Y       = 460;
 static constexpr float GOBTN_HOVER_GROW = 4.0f;
 
-// Button index: 0 = Restart, 1 = Quit
 Rectangle generalRoute::gameOverButtonRect(int index) const {
     int total = GOBTN_W * 2 + GOBTN_GAP;
     int startX = (1280 - total) / 2;
@@ -88,11 +87,13 @@ void generalRoute::restartGame() {
     game_       = std::make_unique<Game>(originalMap_);
     controller_ = std::make_unique<generalController>(*game_);
 
-    // Keep screen-settings intact; they persist across restart.
-    scene_       = Scene::Battle;
-    cursorGx_    = -1;
-    cursorGy_    = -1;
-    requestQuit_ = false;
+    scene_        = Scene::Battle;
+    cursorGx_     = -1;
+    cursorGy_     = -1;
+    requestQuit_  = false;
+    settingsItem_ = 0;
+    resolutionSubmenu_  = false;
+    resolutionSubIndex_ = 0;
     ensureCursorInBounds();
 }
 
@@ -108,38 +109,79 @@ void generalRoute::handleKeyboardInput() {
         if (cursorGx_ >= 0 && cursorGy_ >= 0)
             controller_->onTileActivated(cursorGx_, cursorGy_);
     }
-    if (IsKeyPressed(KEY_ESCAPE))  controller_->deselect();
     if (IsKeyPressed(KEY_E))       controller_->onEndTurnPressed();
     if (IsKeyPressed(KEY_TAB))     controller_->selectNextReadyUnit();
-
-    if (IsKeyPressed(KEY_O) || IsKeyPressed(KEY_F1)) openSettings();
-    if (IsKeyPressed(KEY_F11))                        toggleFullscreen();
+    if (IsKeyPressed(KEY_ESCAPE))  openSettings();
+    if (IsKeyPressed(KEY_F11))     toggleFullscreen();
 }
 
 void generalRoute::handleSettingsInput() {
+    int itemCount = (int)SettingsItem::Count;
+
+    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))
+        settingsItem_ = (settingsItem_ - 1 + itemCount) % itemCount;
+    if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S))
+        settingsItem_ = (settingsItem_ + 1) % itemCount;
+
+    SettingsItem cur = (SettingsItem)settingsItem_;
+
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+        switch (cur) {
+            case SettingsItem::Resolution:
+                resolutionSubmenu_  = true;
+                resolutionSubIndex_ = 0;
+                break;
+            case SettingsItem::Fullscreen:
+                // Toggle only here — no ←/→ path, so the value can't
+                // flip twice in one frame.
+                settingsPreview_.fullscreen = !settingsPreview_.fullscreen;
+                settings_.fullscreen = settingsPreview_.fullscreen;
+                applySettings(settings_.presetIndex, settings_.fullscreen);
+                break;
+            case SettingsItem::EndTurn:
+                scene_ = Scene::Battle;
+                controller_->onEndTurnPressed();
+                break;
+            case SettingsItem::Quit:
+                scene_ = Scene::Battle;
+                requestQuit_ = true;
+                break;
+            default: break;
+        }
+        return;
+    }
+
+    if (IsKeyPressed(KEY_ESCAPE)) {
+        settingsPreview_ = settings_;
+        scene_ = Scene::Battle;
+    }
+}
+
+void generalRoute::handleResolutionSubmenuInput() {
     const auto& presets = resolutionPresets();
     int n = (int)presets.size();
 
-    if (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_A))
-        settingsPreview_.presetIndex = (settingsPreview_.presetIndex - 1 + n) % n;
-    if (IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_D))
-        settingsPreview_.presetIndex = (settingsPreview_.presetIndex + 1) % n;
+    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_W))
+        resolutionSubIndex_ = (resolutionSubIndex_ - 1 + n) % n;
+    if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_S))
+        resolutionSubIndex_ = (resolutionSubIndex_ + 1) % n;
 
-    if (IsKeyPressed(KEY_F))
-        settingsPreview_.fullscreen = !settingsPreview_.fullscreen;
+    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) {
+        settingsPreview_.presetIndex = resolutionSubIndex_;
+        settings_ = settingsPreview_;
+        applySettings(settings_.presetIndex, settings_.fullscreen);
+        resolutionSubmenu_ = false;
+    }
 
-    if (IsKeyPressed(KEY_F11)) toggleFullscreen();
-
-    if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE)) closeSettings(true);
-    if (IsKeyPressed(KEY_ESCAPE))                           closeSettings(false);
+    if (IsKeyPressed(KEY_ESCAPE)) {
+        resolutionSubmenu_ = false;
+    }
 }
 
 void generalRoute::handleGameOverInput() {
-    // Keyboard: R restarts, ESC quits (Ctrl+Q handled globally in update()).
     if (IsKeyPressed(KEY_R)) restartGame();
     if (IsKeyPressed(KEY_ESCAPE)) requestQuit_ = true;
 
-    // Mouse: click a button.
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         int hovered = gameOverHoveredButton();
         if (hovered == 0) restartGame();
@@ -147,11 +189,14 @@ void generalRoute::handleGameOverInput() {
     }
 }
 
-// -------- Settings (unchanged from previous version) --------
+// -------- Settings --------
 
 void generalRoute::openSettings() {
     if (scene_ != Scene::Battle) return;
     settingsPreview_ = settings_;
+    settingsItem_ = 0;
+    resolutionSubmenu_  = false;
+    resolutionSubIndex_ = 0;
     scene_ = Scene::Settings;
 }
 
@@ -161,6 +206,7 @@ void generalRoute::closeSettings(bool apply) {
         settings_ = settingsPreview_;
         applySettings(settings_.presetIndex, settings_.fullscreen);
     }
+    resolutionSubmenu_ = false;
     scene_ = Scene::Battle;
 }
 
@@ -189,17 +235,19 @@ void generalRoute::applySettings(int presetIndex, bool fullscreen) {
 // -------- Main loop hooks --------
 
 void generalRoute::update() {
-    // Ctrl+Q quits from ANY scene.
     if ((IsKeyDown(KEY_LEFT_CONTROL) || IsKeyDown(KEY_RIGHT_CONTROL)) &&
         IsKeyPressed(KEY_Q)) {
         requestQuit_ = true;
     }
     if (requestQuit_) return;
 
-    if (scene_ == Scene::Settings) { handleSettingsInput(); return; }
+    if (scene_ == Scene::Settings) {
+        if (resolutionSubmenu_) handleResolutionSubmenuInput();
+        else                    handleSettingsInput();
+        return;
+    }
     if (scene_ == Scene::GameOver) { handleGameOverInput(); return; }
 
-    // scene_ == Scene::Battle
     trackMouseCursor();
     handleKeyboardInput();
 
@@ -224,7 +272,6 @@ static void drawButton(Rectangle r, const char* label, bool hovered) {
     DrawRectangleRec(r, fill);
     DrawRectangleLinesEx(r, 2.0f, outline);
 
-    // Centre the label inside the button.
     int fs = 22;
     int tw = MeasureText(label, fs);
     int tx = (int)(r.x + (r.width  - tw) / 2);
@@ -242,20 +289,26 @@ void generalRoute::draw() {
         if (cursorGx_ >= 0 && scene_ == Scene::Battle)
             hudView_->drawHoverPreview(*game_, *controller_, cursorGx_, cursorGy_);
 
-        if (scene_ == Scene::Settings)
-            configView_->draw(settingsPreview_.presetIndex,
-                              settingsPreview_.fullscreen,
-                              scaler_->baseWidth(),
-                              scaler_->baseHeight());
+        if (scene_ == Scene::Settings) {
+            if (resolutionSubmenu_)
+                configView_->drawResolutionSubmenu(
+                    resolutionSubIndex_,
+                    settingsPreview_.presetIndex,
+                    settingsPreview_.fullscreen,
+                    scaler_->baseWidth(), scaler_->baseHeight());
+            else
+                configView_->draw(settingsItem_,
+                                  settingsPreview_.presetIndex,
+                                  settingsPreview_.fullscreen,
+                                  scaler_->baseWidth(), scaler_->baseHeight());
+        }
     } else {
-        // ---- Game over screen ----
         DrawTextHi("GAME OVER", 430, 220, 60, RED);
         DrawTextHi("Press R to restart, ESC to quit, or click below",
                    300, 320, 18, LIGHTGRAY);
 
         int hovered = gameOverHoveredButton();
 
-        // Restart button
         Rectangle r0 = gameOverButtonRect(0);
         if (hovered == 0) {
             r0.x      -= GOBTN_HOVER_GROW;
@@ -265,7 +318,6 @@ void generalRoute::draw() {
         }
         drawButton(r0, "RESTART", hovered == 0);
 
-        // Quit button
         Rectangle r1 = gameOverButtonRect(1);
         if (hovered == 1) {
             r1.x      -= GOBTN_HOVER_GROW;

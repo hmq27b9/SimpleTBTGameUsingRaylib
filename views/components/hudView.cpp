@@ -17,7 +17,6 @@ static const char* terrainName(Terrain t) {
     return "?";
 }
 
-// Short flavor line so the player understands *why* the mods are what they are.
 static const char* terrainBlurb(Terrain t) {
     switch (t) {
         case Terrain::Plain:    return "Open ground - no modifiers";
@@ -31,12 +30,8 @@ static const char* terrainBlurb(Terrain t) {
     return "";
 }
 
-// Internal defenseMod is a multiplier on damage TAKEN.
-// Display it as a defense bonus: 100 - defenseMod (higher = better).
 static int defBonus(int defenseMod) { return 100 - defenseMod; }
 
-// HUD column. Virtual frame is 1280 wide; the map occupies up to ~712px on
-// the left, so the HUD lives at x=840 with ~440px of runway to the right edge.
 static constexpr int HUD_X = 840;
 
 void hudView::draw(const Game& g, const generalController& ctrl) const {
@@ -48,28 +43,19 @@ void hudView::draw(const Game& g, const generalController& ctrl) const {
     DrawTextHi(phaseTxt, HUD_X, 50, 22, RAYWHITE);
     DrawTextHi(TextFormat("Turn %d", ctrl.turnNumber()), HUD_X, 78, 18, LIGHTGRAY);
 
-    DrawTextHi("[ARROWS] Move cursor", HUD_X, 104, 14, LIGHTGRAY);
-    DrawTextHi("[ENTER/SPACE] Act", HUD_X, 122, 14, LIGHTGRAY);
-    DrawTextHi("[TAB] Next unit", HUD_X, 140, 14, LIGHTGRAY);
-    DrawTextHi("[ESC] Deselect", HUD_X, 158, 14, LIGHTGRAY);
-    DrawTextHi("[E] End turn", HUD_X, 176, 14, LIGHTGRAY);
-    DrawTextHi("[F1/O] Settings", HUD_X, 194, 14, SKYBLUE);
-    DrawTextHi("[F11] Fullscreen", HUD_X, 212, 14, SKYBLUE);
-    DrawTextHi("[Ctrl+Q] Quit", HUD_X, 230, 14, SKYBLUE);
-
     if (g.selectedUnitId != -1) {
         if (const UnitOwnInfantryLine* u = const_cast<Game&>(g).ownById(g.selectedUnitId)) {
             const Tile& t = g.map().tileAt(u->gridX, u->gridY);
-            DrawTextHi(u->name.c_str(), HUD_X, 264, 22, YELLOW);
+            DrawTextHi(u->name.c_str(), HUD_X, 110, 22, YELLOW);
             DrawTextHi(TextFormat("HP %d/%d", u->hp, u->maxHp),
-                       HUD_X, 292, 18, RAYWHITE);
+                       HUD_X, 138, 18, RAYWHITE);
             DrawTextHi(TextFormat("ATK %d  RNG %d", u->attackPower, u->attackRange),
-                       HUD_X, 314, 18, RAYWHITE);
+                       HUD_X, 160, 18, RAYWHITE);
             DrawTextHi(TextFormat("On %s", terrainName(t.terrain)),
-                       HUD_X, 336, 16, LIGHTGRAY);
+                       HUD_X, 182, 16, LIGHTGRAY);
             DrawTextHi(TextFormat("  atk %+d%%  def %+d%%",
                                   t.attackMod - 100, defBonus(t.defenseMod)),
-                       HUD_X, 354, 14, DARKGRAY);
+                       HUD_X, 200, 14, DARKGRAY);
         }
     }
 }
@@ -91,9 +77,8 @@ void hudView::drawHoverPreview(const Game& g,
     if (ctrl.phase() != Phase::PlayerTurn) return;
     if (!g.map().inBounds(hx, hy)) return;
 
-    // ---- Section 1: always show what the cursor is on ----
     const Tile& t = g.map().tileAt(hx, hy);
-    int y = 384;
+    int y = 240;
 
     DrawTextHi("CURSOR TILE", HUD_X, y, 12, DARKGRAY); y += 16;
     DrawTextHi(TextFormat("%d,%d  %s", hx, hy, terrainName(t.terrain)),
@@ -107,7 +92,6 @@ void hudView::drawHoverPreview(const Game& g,
         DrawTextHi("(impassable)", HUD_X, y, 13, ORANGE); y += 18;
     }
 
-    // Who stands here, if anyone.
     if (const UnitOwnInfantryLine* u = ownAt(g, hx, hy)) {
         DrawTextHi(TextFormat("Friendly: %s  HP %d/%d",
                               u->name.c_str(), u->hp, u->maxHp),
@@ -122,7 +106,6 @@ void hudView::drawHoverPreview(const Game& g,
 
     y += 6;
 
-    // ---- Section 2: action preview (only if a unit is selected) ----
     if (g.selectedUnitId == -1) return;
 
     const UnitOwnInfantryLine* sel = const_cast<Game&>(g).ownById(g.selectedUnitId);
@@ -173,7 +156,6 @@ void hudView::drawHoverPreview(const Game& g,
                        HUD_X, y, 13, GREEN); y += 16;
         }
 
-        // Show both tiles' contributions so the numbers are traceable.
         const Tile& atkT = g.map().tileAt(sel->gridX, sel->gridY);
         const Tile& defT = g.map().tileAt(target->gridX, target->gridY);
         DrawTextHi(TextFormat("Atk tile: %s (atk %+d%%)",
@@ -185,7 +167,6 @@ void hudView::drawHoverPreview(const Game& g,
         return;
     }
 
-    // No enemy: if it's a reachable empty tile, say so.
     if (ownAt(g, hx, hy)) {
         DrawTextHi("Own unit (Act to reselect)", HUD_X, y, 14, YELLOW);
         return;

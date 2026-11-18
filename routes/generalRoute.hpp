@@ -28,6 +28,7 @@ private:
     void trackMouseCursor();
     void handleKeyboardInput();
     void handleSettingsInput();
+    void handleResolutionSubmenuInput();
     void handleGameOverInput();
     void moveCursor(int dx, int dy);
     void ensureCursorInBounds();
@@ -38,15 +39,15 @@ private:
     void toggleFullscreen();
 
     void restartGame();
-    Vector2 gameOverButtonCenter(int index) const;   // 0 = Restart, 1 = Quit
+    Vector2 gameOverButtonCenter(int index) const;
     Rectangle gameOverButtonRect(int index) const;
-    int     gameOverHoveredButton() const;           // -1 if none
+    int     gameOverHoveredButton() const;
 
     Scene scene_ = Scene::Battle;
     bool  requestQuit_ = false;
     int cursorGx_ = -1, cursorGy_ = -1;
 
-    MapData originalMap_;      // kept so Restart can rebuild the game
+    MapData originalMap_;
 
     std::unique_ptr<Game>              game_;
     std::unique_ptr<generalController> controller_;
@@ -58,4 +59,8 @@ private:
 
     ScreenSettings settings_;
     ScreenSettings settingsPreview_;
+
+    int  settingsItem_ = 0;          // SettingsItem cast to int
+    bool resolutionSubmenu_ = false; // true while the resolution submenu is open
+    int  resolutionSubIndex_ = 0;    // index inside the submenu (0..n-1 = preset, n = fullscreen toggle)
 };
