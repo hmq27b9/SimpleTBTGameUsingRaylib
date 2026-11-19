@@ -1,9 +1,9 @@
 --build/premake5.lua
-workspace "SimpleTBTGameUsingRaylib"
+workspace "SimpleTurnBasedStrategyGame"
     architecture "x86_64"
     configurations { "Debug", "Release" }
 
-project "SimpleTBTGameUsingRaylib"
+project "SimpleTurnBasedStrategyGame"
     kind "ConsoleApp"
     language "C++"
     cppdialect "C++23"

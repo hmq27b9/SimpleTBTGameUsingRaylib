@@ -2,4 +2,4 @@ bin
 obj
 *.env
 build/Makefile
-build/SimpleTBTGameUsingRaylib.make
+build/SimpleTurnBasedStrategyGame.make
